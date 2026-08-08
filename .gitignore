@@ -1,0 +1,22 @@
+# Python caches and artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Streamlit config (if you ever add API keys or database passwords)
+.streamlit/secrets.toml
+
+# Project Specific Data (Don't commit massive CSVs or temporary outputs)
+data/uploads/
+data/outputs/
+
+# macOS / Windows system files
+.DS_Store
+Thumbs.db
