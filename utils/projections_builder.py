@@ -12,19 +12,35 @@ def build_baseline_projections():
     valid_positions = ['QB', 'RB', 'WR', 'TE']
     df = df_2023[df_2023['position'].isin(valid_positions)]
     
+    # --- SAFEGUARD: Check for missing columns and create them if needed ---
+    # The nflreadpy weekly stats table sometimes omits or renames these columns.
+    # If they are missing, we add them as 0 so the math doesn't crash.
+    expected_cols = [
+        'passing_2pt_conversions', 'rushing_2pt_conversions', 
+        'receiving_2pt_conversions', 'fumbles_lost'
+    ]
+    for col in expected_cols:
+        if col not in df.columns:
+            df[col] = 0
+    # ----------------------------------------------------------------------
+    
     # 3. Group the weekly data into full-season totals for each player
     season_totals = df.groupby(['player_display_name', 'position', 'team']).agg({
         'passing_yards': 'sum',
         'passing_tds': 'sum',
-        'passing_interceptions': 'sum', 
+        'passing_interceptions': 'sum',
+        'passing_2pt_conversions': 'sum',
         'rushing_yards': 'sum',
         'rushing_tds': 'sum',
+        'rushing_2pt_conversions': 'sum',
         'receptions': 'sum',
         'receiving_yards': 'sum',
-        'receiving_tds': 'sum'
+        'receiving_tds': 'sum',
+        'receiving_2pt_conversions': 'sum',
+        'fumbles_lost': 'sum'
     }).reset_index()
 
-    print("Applying FanTeam scoring rules...")
+    print("Applying exact FanTeam scoring rules...")
 
     # 4. Apply your exact FanTeam scoring multipliers to the raw stats
     season_totals['fanteam_points'] = (
@@ -35,7 +51,11 @@ def build_baseline_projections():
         (season_totals['rushing_tds'] * 6) +
         (season_totals['receptions'] * 1) +
         (season_totals['receiving_yards'] * 0.1) +
-        (season_totals['receiving_tds'] * 6)
+        (season_totals['receiving_tds'] * 6) +
+        (season_totals['fumbles_lost'] * -2) +
+        (season_totals['passing_2pt_conversions'] * 2) +
+        (season_totals['rushing_2pt_conversions'] * 2) +
+        (season_totals['receiving_2pt_conversions'] * 2)
     )
     
     # 5. Clean up the dataframe for the optimizer
